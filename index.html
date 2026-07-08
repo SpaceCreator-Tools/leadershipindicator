@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,6 +92,13 @@ body.light .toggle-thumb { transform: translateX(12px); background: var(--text);
 .scale-txt { font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); }
 .scale-option.selected .scale-txt { color: var(--text); }
 .q-nav { display: flex; gap: 10px; align-items: center; }
+
+
+.archetype-wrap { text-align: center; margin-bottom: 48px; }
+.archetype-eyebrow { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+.archetype-name { font-family: 'DM Serif Display', serif; font-size: clamp(2.4rem, 6vw, 3.8rem); line-height: 1.1; margin-bottom: 20px; }
+.archetype-desc { font-size: 1rem; line-height: 1.75; color: var(--text-muted); max-width: 520px; margin: 0 auto 32px; }
+.archetype-divider { width: 40px; height: 3px; border-radius: 2px; margin: 0 auto; }
 
 .results-name { font-family: 'DM Serif Display', serif; font-size: clamp(1.4rem, 3vw, 1.9rem); margin-bottom: 6px; }
 .results-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 48px; }
@@ -233,7 +239,7 @@ body.light .toggle-thumb { transform: translateX(12px); background: var(--text);
 <script>
 const SCALE = [
   { val: 1, text: 'This feels wholly untrue. I could make an argument the opposite is true.' },
-  { val: 2, text: 'that feels somewhat untrue. I would hardly ever say this about myself.' },
+  { val: 2, text: 'That feels somewhat untrue. I would hardly ever say this about myself.' },
   { val: 3, text: 'I do not really agree. This just is not how I tend to operate.' },
   { val: 4, text: 'Agree and disagree. I do this sometimes, though I have work to do.' },
   { val: 5, text: 'I pretty much agree. I would say this is true in most instances.' },
@@ -303,6 +309,30 @@ const NARRATIVES = {
     { min:14, name:'Availability-Based Developer', text:'You care about your team\'s growth. But your approach tends to be reactive rather than designed. You make yourself available and support people when they come to you. The risk is that the team members who most need intentional investment are often the least likely to ask for it.' },
     { min:0,  name:'Meaningful Blind Spot', text:'Development is one of the most direct levers a leader has on retention, engagement, and team performance. A gap here tends to compound over time. Starting with one dedicated development conversation per team member per quarter is a concrete and meaningful first move.' },
   ],
+};
+
+
+const ARCHETYPES = {
+  blue: {
+    name: 'The Steward',
+    color: '#4a90d9',
+    desc: 'You lead through presence. People feel safe being honest with you, making mistakes around you, and bringing you the things they would not bring someone else. That safety is not accidental. You have built it, quietly and consistently, and it holds your team together.'
+  },
+  red: {
+    name: 'The Catalyst',
+    color: '#d94a4a',
+    desc: 'You lead through friction. Where others smooth things over, you move toward tension and use it. Your team learns to trust you not because things are always comfortable, but because you show up honestly when they are not. You make hard things productive.'
+  },
+  yellow: {
+    name: 'The Visionary',
+    color: '#d9b84a',
+    desc: 'You lead through direction. People around you know where they are going and why it matters. You translate purpose into momentum, and your presence reminds people that the work is connected to something bigger than the task in front of them.'
+  },
+  green: {
+    name: 'The Cultivator',
+    color: '#4ab87a',
+    desc: 'You lead through investment. You see people not just as they are but as they could be, and you put real energy into that gap. Your team grows because of you, not just alongside you. That kind of leadership compounds over time.'
+  },
 };
 
 let currentQ = 0;
@@ -407,6 +437,13 @@ function getNarrative(q, score) {
   return NARRATIVES[q].find(n => score >= n.min) || NARRATIVES[q][NARRATIVES[q].length - 1];
 }
 
+
+function getArchetype(scores) {
+  const keys = ['blue', 'red', 'yellow', 'green'];
+  const primary = keys.reduce((a, b) => scores[a] >= scores[b] ? a : b);
+  return { quadrant: primary, ...ARCHETYPES[primary] };
+}
+
 function showResults() {
   const scores = computeScores();
   const total = Object.values(scores).reduce((a, b) => a + b, 0);
@@ -441,8 +478,16 @@ function showResults() {
       '</div>';
   }).join('');
 
+  const archetype = getArchetype(scores);
+
   document.getElementById('screen-results').innerHTML =
-    '<div class="eyebrow">Your Results</div>' +
+    '<div class="archetype-wrap">' +
+      '<div class="archetype-eyebrow">Your Leadership Archetype</div>' +
+      '<div class="archetype-name" style="color:' + archetype.color + '">' + archetype.name + '</div>' +
+      '<div class="archetype-desc">' + archetype.desc + '</div>' +
+      '<div class="archetype-divider" style="background:' + archetype.color + '"></div>' +
+    '</div>' +
+    '<div class="eyebrow" style="margin-bottom:8px;">Your Results</div>' +
     '<div class="results-name">' + name + '</div>' +
     '<div class="results-sub">Leadership Indicator · Space Creator</div>' +
 
