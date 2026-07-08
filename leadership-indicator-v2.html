@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leadership Indicator · Space Creator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #181818;
+  --surface2: #222222;
+  --border: #2e2e2e;
+  --text: #f5f2ec;
+  --text-muted: #b0aba0;
+  --text-dim: #777;
+  --blue: #4a90d9;
+  --red: #d94a4a;
+  --yellow: #d9b84a;
+  --green: #4ab87a;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+body.light {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #eeebe4;
+  --border: #ddd9d0;
+  --text: #1a1a18;
+  --text-muted: #5a5750;
+  --text-dim: #9a9590;
+  --blue: #2e72be;
+  --red: #be2e2e;
+  --yellow: #b8920a;
+  --green: #1e8a52;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 400; min-height: 100vh; display: flex; flex-direction: column; }
+
+.header { padding: 20px 40px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.logo { font-family: 'DM Serif Display', serif; font-size: 1.05rem; letter-spacing: 0.02em; opacity: 0.9; }
+.logo span { opacity: 0.4; margin: 0 8px; }
+.progress-wrap { flex: 1; max-width: 260px; margin: 0 32px; display: none; }
+.progress-wrap.visible { display: block; }
+.progress-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; }
+.progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--text); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+.theme-btn { display: flex; align-items: center; gap: 8px; cursor: pointer; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 0.7rem; letter-spacing: 0.08em; transition: all 0.2s; }
+.theme-btn:hover { border-color: var(--text-muted); color: var(--text); }
+.toggle-track { width: 26px; height: 14px; background: var(--border); border-radius: 7px; position: relative; transition: background 0.25s; flex-shrink: 0; }
+body.light .toggle-track { background: var(--text-dim); }
+.toggle-thumb { position: absolute; width: 9px; height: 9px; background: var(--text-muted); border-radius: 50%; top: 2.5px; left: 2.5px; transition: transform 0.25s; }
+body.light .toggle-thumb { transform: translateX(12px); background: var(--text); }
+
+.main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 60px 40px; }
+.screen { display: none; max-width: 660px; width: 100%; animation: fadeUp 0.4s ease forwards; }
+.screen.active { display: block; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+.eyebrow { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 20px; }
+.headline { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; margin-bottom: 24px; }
+.headline em { font-style: italic; opacity: 0.6; }
+.body-text { font-size: 1rem; line-height: 1.75; color: var(--text-muted); margin-bottom: 40px; }
+.meta-row { display: flex; gap: 28px; margin-bottom: 40px; }
+.meta-item { display: flex; flex-direction: column; gap: 3px; }
+.meta-num { font-family: 'DM Serif Display', serif; font-size: 1.9rem; line-height: 1; }
+.meta-lbl { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 28px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; letter-spacing: 0.04em; cursor: pointer; border: none; transition: all 0.2s; }
+.btn-primary { background: var(--text); color: var(--bg); }
+.btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--text-muted); color: var(--text); }
+.btn-row { display: flex; gap: 10px; align-items: center; margin-top: 36px; }
+
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+.form-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 16px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--text-muted); }
+.form-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.q-num { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 18px; }
+.q-text { font-family: 'DM Serif Display', serif; font-size: clamp(1.3rem, 2.8vw, 1.75rem); line-height: 1.35; margin-bottom: 44px; }
+.scale-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 36px; }
+.scale-option { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; text-align: left; width: 100%; }
+.scale-option:hover { border-color: var(--text-dim); background: var(--surface2); }
+.scale-option.selected { background: var(--surface2); border-color: var(--text-muted); }
+.scale-val { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--text-dim); min-width: 16px; padding-top: 1px; }
+.scale-option.selected .scale-val { color: var(--text); }
+.scale-txt { font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); }
+.scale-option.selected .scale-txt { color: var(--text); }
+.q-nav { display: flex; gap: 10px; align-items: center; }
+
+.results-name { font-family: 'DM Serif Display', serif; font-size: clamp(1.4rem, 3vw, 1.9rem); margin-bottom: 6px; }
+.results-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 48px; }
+
+.radar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin-bottom: 36px; position: relative; }
+.radar-title { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 24px; }
+.radar-canvas-wrap { position: relative; width: 100%; max-width: 400px; margin: 0 auto; }
+
+.quad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 36px; }
+.quad-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; border-left-width: 3px; }
+.quad-card.blue { border-left-color: var(--blue); }
+.quad-card.red { border-left-color: var(--red); }
+.quad-card.yellow { border-left-color: var(--yellow); }
+.quad-card.green { border-left-color: var(--green); }
+.quad-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.quad-score { font-family: 'DM Serif Display', serif; font-size: 2rem; line-height: 1; }
+.quad-score.blue { color: var(--blue); }
+.quad-score.red { color: var(--red); }
+.quad-score.yellow { color: var(--yellow); }
+.quad-score.green { color: var(--green); }
+.quad-denom { font-size: 0.8rem; color: var(--text-dim); }
+.quad-bar-track { height: 4px; background: var(--border); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.quad-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.quad-bar-fill.blue { background: var(--blue); }
+.quad-bar-fill.red { background: var(--red); }
+.quad-bar-fill.yellow { background: var(--yellow); }
+.quad-bar-fill.green { background: var(--green); }
+.quad-band { font-size: 0.68rem; color: var(--text-dim); margin-top: 6px; }
+.quad-about { font-size: 0.88rem; line-height: 1.7; color: var(--text-muted); margin-top: 14px; }
+
+.narrative-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 30px; margin-bottom: 20px; }
+.narrative-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+.narrative-head { font-size: 0.95rem; font-weight: 500; margin-bottom: 10px; }
+.narrative-head.blue { color: var(--blue); }
+.narrative-head.red { color: var(--red); }
+.narrative-head.yellow { color: var(--yellow); }
+.narrative-head.green { color: var(--green); }
+.narrative-text { font-size: 0.88rem; line-height: 1.72; color: var(--text-muted); }
+
+.cta-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px; margin-top: 36px; margin-bottom: 60px; }
+.cta-head { font-family: 'DM Serif Display', serif; font-size: 1.3rem; line-height: 1.4; margin-bottom: 14px; }
+.cta-body { font-size: 0.88rem; line-height: 1.72; color: var(--text-muted); margin-bottom: 24px; }
+.cta-link { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; background: var(--text); color: var(--bg); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.04em; text-decoration: none; transition: opacity 0.2s; }
+.cta-link:hover { opacity: 0.85; }
+
+.footer { padding: 18px 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.footer-txt { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.06em; }
+.footer-link { font-size: 0.7rem; color: var(--text-dim); text-decoration: none; letter-spacing: 0.06em; }
+.footer-link:hover { color: var(--text-muted); }
+
+@media (max-width: 600px) {
+  .header { padding: 18px 20px; }
+  .main { padding: 36px 20px; }
+  .form-row2 { grid-template-columns: 1fr; }
+  .quad-grid { grid-template-columns: 1fr; }
+  .progress-wrap { max-width: 140px; margin: 0 16px; }
+  .footer { padding: 14px 20px; flex-direction: column; gap: 6px; }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('2j0Lspe-bIS6FjBMV');</script>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">Space Creator <span>x</span> Leadership Indicator</div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label" id="progressLabel">Question 1 of 20</div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()">
+    <span id="themeIcon">☀️</span>
+    <div class="toggle-track"><div class="toggle-thumb"></div></div>
+    <span id="themeLabel">Go Light</span>
+  </button>
+</header>
+
+<main class="main">
+
+  <div class="screen active" id="screen-intro">
+    <div class="eyebrow">Leadership Indicator</div>
+    <h1 class="headline">A window into the way your team <em>experiences you</em> as a leader.</h1>
+    <p class="body-text">This assessment is designed to help you get an honest look at the kind of culture you are creating for your team through your own eyes. There are no trick questions and no obviously right answers. The goal is not to make you look good or bad. It is to help you see clearly.</p>
+    <div class="meta-row">
+      <div class="meta-item"><div class="meta-num">20</div><div class="meta-lbl">Questions</div></div>
+      <div class="meta-item"><div class="meta-num">~7</div><div class="meta-lbl">Minutes</div></div>
+      <div class="meta-item"><div class="meta-num">4</div><div class="meta-lbl">Quadrants</div></div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.65;margin-bottom:28px;">Answer as the leader you actually are, not the leader you are hoping to become. That is where the useful information lives.</p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showScreen('screen-info')">Get Started →</button>
+      <button class="btn btn-ghost" onclick="previewResults()" style="font-size:0.72rem;opacity:0.45;">Preview Results</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-info">
+    <div class="eyebrow">Before we begin</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.5rem,3vw,2rem);margin-bottom:28px;">A few basics.</h2>
+    <div class="form-row2">
+      <div class="form-group">
+        <label class="form-label">First Name</label>
+        <input class="form-input" type="text" id="firstName" placeholder="First name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name</label>
+        <input class="form-input" type="text" id="lastName" placeholder="Last name">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" type="email" id="email" placeholder="your@email.com">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="startAssessment()">Continue →</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-intro')">Back</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-question">
+    <div class="q-num" id="qNum"></div>
+    <div class="q-text" id="qText"></div>
+    <div class="scale-wrap" id="scaleWrap"></div>
+    <div class="q-nav">
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Next →</button>
+      <button class="btn btn-ghost" id="prevBtn" onclick="prevQuestion()">Back</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-results"></div>
+
+</main>
+
+<footer class="footer">
+  <span class="footer-txt">Space Creator. All rights reserved.</span>
+  <a class="footer-link" href="https://spacecreator.com" target="_blank">spacecreator.com</a>
+</footer>
+
+<script>
+const SCALE = [
+  { val: 1, text: 'This feels wholly untrue. I could make an argument the opposite is true.' },
+  { val: 2, text: 'That is not true here. I would hardly ever say this about myself.' },
+  { val: 3, text: 'I do not really agree. This just is not how I tend to operate.' },
+  { val: 4, text: 'Agree and disagree. I do this sometimes, though I have work to do.' },
+  { val: 5, text: 'I pretty much agree. I would say this is true in most instances.' },
+  { val: 6, text: 'I definitely agree. Might not be true every day, but pretty close.' },
+  { val: 7, text: 'Absolutely, positively true. I could preach this all day.' },
+];
+
+const QUESTIONS_RAW = [
+  { id: 'B1', q: 'blue',   text: 'When I notice a performance or behavior issue, I address it directly rather than waiting to see if it resolves on its own.' },
+  { id: 'B2', q: 'blue',   text: 'When someone on my team challenges my thinking, I receive it as useful information rather than a threat.' },
+  { id: 'B3', q: 'blue',   text: 'I share my own mistakes and uncertainties with my team. I do not think it is my job to have all the answers.' },
+  { id: 'B4', q: 'blue',   text: 'When someone on my team makes a mistake, I follow up with them as a person, not just to make sure the issue got fixed.' },
+  { id: 'B5', q: 'blue',   text: 'I actively create moments for my team to raise concerns and give feedback. I do not just keep an open door and wait.' },
+  { id: 'R1', q: 'red',    text: 'When conflict surfaces on my team, I move toward it. I do not smooth it over or hope it resolves on its own.' },
+  { id: 'R2', q: 'red',    text: 'When my team members are in tension over resources or priorities, I facilitate the conversation rather than just making the call.' },
+  { id: 'R3', q: 'red',    text: 'I proactively build cross-functional relationships. I do not wait for a problem to force the connection.' },
+  { id: 'R4', q: 'red',    text: 'When I think about the last difficult conflict on my team, I feel good about how I showed up in it.' },
+  { id: 'R5', q: 'red',    text: 'The people most affected by my decisions have a real voice in them before I decide.' },
+  { id: 'Y1', q: 'yellow', text: 'I consistently connect the work my team is doing back to the larger vision. The why is part of how I communicate.' },
+  { id: 'Y2', q: 'yellow', text: 'When I sense someone on my team is disengaged, I name it directly rather than working around it.' },
+  { id: 'Y3', q: 'yellow', text: 'My team can feel my genuine enthusiasm for the work in everyday interactions, not just in big moments.' },
+  { id: 'Y4', q: 'yellow', text: 'I revisit and recommit to our team\'s vision regularly. It is a living conversation, not something I said once.' },
+  { id: 'Y5', q: 'yellow', text: 'I know exactly where my team stands in relation to our vision. I could tell you who is energized, who is drifting, and why.' },
+  { id: 'G1', q: 'green',  text: 'I have dedicated development conversations with each person on my team that are separate from performance reviews.' },
+  { id: 'G2', q: 'green',  text: 'When someone on my team lacks what they need to grow, I advocate for those resources. I do not just work around the gap.' },
+  { id: 'G3', q: 'green',  text: 'I invest in my own development in ways my team can see. I want them to experience me as someone still becoming.' },
+  { id: 'G4', q: 'green',  text: 'I have a clear sense of where each person on my team is headed professionally and we talk about it regularly.' },
+  { id: 'G5', q: 'green',  text: 'My team members bring their development goals to me without me having to initiate it. That tells me something is working.' },
+];
+
+const QUADRANT_INFO = {
+  blue:   { label: 'Safety and Feedback',         color: '#4a90d9', about: 'Psychological safety is not a perk or a personality trait. It is a condition you either build or you do not. The blue quadrant looks at how you show up when things get uncomfortable: when someone makes a mistake, when feedback comes your way, when a hard conversation needs to happen. It measures whether your team experiences you as someone who moves toward difficulty or away from it.' },
+  red:    { label: 'Conflict and Collaboration',   color: '#d94a4a', about: 'The red quadrant is about what happens when people, ideas, and resources come into tension. Leaders who lead well here do not avoid friction. They have learned to use it. They understand that conflict handled well is one of the fastest paths to trust, and that inclusion in decisions is one of the most powerful drivers of ownership.' },
+  yellow: { label: 'Vision and Alignment',         color: '#d9b84a', about: 'The yellow quadrant is about whether your team knows why they are doing what they are doing, and whether they actually care. It measures how deliberately you communicate vision, how well you distinguish between a team that is bought in and one that is just compliant, and whether you model the passion and alignment you hope to see.' },
+  green:  { label: 'Growth and Development',       color: '#4ab87a', about: 'The green quadrant is about growth, but not the kind that shows up on an org chart. It measures whether you are creating the conditions for your team to genuinely become better as professionals and people. It also asks whether you are investing in your own growth with the same energy you bring to developing others.' },
+};
+
+const BANDS = {
+  blue:   [{ min:30,label:'Strength area',desc:'You are building the conditions for real psychological safety, deliberately and consistently.' },{ min:22,label:'Solid foundation',desc:'Strong instincts with some gaps. Likely inconsistent in practice.' },{ min:14,label:'Developing',desc:'Safety may exist in pockets but is not structurally supported.' },{ min:0,label:'Meaningful opportunity',desc:'This is likely a significant blind spot worth immediate attention.' }],
+  red:    [{ min:30,label:'Strength area',desc:'You are using friction productively and building ownership through inclusive process.' },{ min:22,label:'Solid foundation',desc:'Good instincts. The opportunity is in making them more consistent.' },{ min:14,label:'Developing',desc:'Your team may feel excluded from conflict or decisions more than you realize.' },{ min:0,label:'Meaningful opportunity',desc:'This quadrant deserves significant and intentional attention.' }],
+  yellow: [{ min:30,label:'Strength area',desc:'You are keeping vision alive as a practice, not just a launch.' },{ min:22,label:'Solid foundation',desc:'You communicate vision, but consistency and depth are the opportunity.' },{ min:14,label:'Developing',desc:'Your team may know the destination but not feel connected to the journey.' },{ min:0,label:'Meaningful opportunity',desc:'Vision communication is likely a gap your team feels, even if they cannot name it.' }],
+  green:  [{ min:30,label:'Strength area',desc:'You are investing in development with intention, including your own.' },{ min:22,label:'Solid foundation',desc:'You care about growth but it may be happening reactively rather than by design.' },{ min:14,label:'Developing',desc:'Development is likely uneven across your team and understructured.' },{ min:0,label:'Meaningful opportunity',desc:'This is a significant area for growth, for you and for your team.' }],
+};
+
+const NARRATIVES = {
+  blue: [
+    { min:30, name:'Intentional Safety Builder', text:'You are doing the work here and it shows up in the specifics. You depersonalize mistakes, you create structures for honest conversation, and you model the kind of openness you want your team to practice. Your team is more likely than most to experience you as genuinely safe to be honest with. The question at this level is whether you are sustaining it consistently enough that your team does not have to wonder if it is still there.' },
+    { min:22, name:'Reactive but Engaged', text:'You are not afraid of hard things. When something surfaces you tend to engage it and move toward resolution. The gap is in the before: the structures, habits, and invitations that make it easier for your team to bring things to you before they become problems. Your team likely experiences you as approachable, but approachable and psychologically safe are not always the same thing.' },
+    { min:14, name:'Assumption-Based Leader', text:'You lead with good intentions and genuine care. But your instincts tend toward waiting: waiting for problems to surface, trusting that silence means safety, giving people space rather than creating it. The risk is that the team members who most need to raise something are often the least likely to do so on their own. The opportunity is moving from available to intentional.' },
+    { min:0,  name:'Meaningful Blind Spot', text:'This quadrant is signaling a significant gap in how you show up around safety and feedback. That does not mean the culture is broken. It means there is important work to do, and the fact that you are here is a good first step. A conversation with a coach or trusted colleague about where to start would go a long way.' },
+  ],
+  red: [
+    { min:30, name:'Collaborative Facilitator', text:'You bring people into the hard stuff, both the decisions that affect them and the tensions that need to be worked through together. That takes courage and consistency, and it builds the kind of trust that is hard to manufacture any other way. The challenge at this level is maintaining that collaborative orientation when speed or pressure makes it tempting to just make the call and move on.' },
+    { min:22, name:'Diplomatic Includer', text:'You are thoughtful about relationships and careful about how conflict lands. That relational instinct is genuinely valuable. The risk is that selective inclusion can feel like exclusion to the people who were not consulted, and private conflict management can leave things unresolved at the team level even when individual conversations go well.' },
+    { min:14, name:'Manager of Conflict', text:'You tend to lead for efficiency and stability. Decisions get made, conflict gets addressed, and things keep moving. But your instincts may be oriented more toward resolving tension than using it. Your team likely experiences you as capable and clear, but may feel less included in the process than they would like.' },
+    { min:0,  name:'Meaningful Blind Spot', text:'This quadrant is flagging a real gap in how you navigate conflict, decisions, and collaboration. The good news is that these are learnable skills, not fixed traits. Understanding where your defaults come from is a powerful starting point for the work ahead.' },
+  ],
+  yellow: [
+    { min:30, name:'Intentional Vision Keeper', text:'You treat vision as a living thing that needs tending, not a destination you point to once and trust everyone to remember. You weave it into everyday conversations, you stay curious about whether your team is genuinely connected or just going along, and you model the enthusiasm you want to see. The question at this level is whether you are creating conditions for your team to carry the vision themselves.' },
+    { min:22, name:'Developing Communicator', text:'You understand the difference between a team that is bought in and a team that is just going through the motions. The gap right now is less about understanding and more about practice. Vision communication has not become a consistent habit yet, which means your team may be getting it in bursts rather than as a steady current running underneath the work.' },
+    { min:14, name:'Vision Broadcaster', text:'You communicate direction clearly and show up for the big moments. Your team likely knows where you are headed. The gap is in the between: the ordinary conversations where vision either stays alive or quietly fades. When things are going well you tend to trust that engagement is following, but compliance and commitment can look identical from the outside.' },
+    { min:0,  name:'Meaningful Blind Spot', text:'Vision and alignment are foundational to how a team experiences meaning in their work. A gap here tends to show up as disengagement, quiet quitting, or people going through the motions without really caring why. This is worth a real investment of attention.' },
+  ],
+  green: [
+    { min:30, name:'Holistic Growth Leader', text:'You think about development the way the best coaches do: as a whole-person endeavor that is bigger than any role or promotion cycle. You are proactive, you are personalized, and you understand that your job is to invest in people becoming, not just their doing. The question at this level is whether you are modeling that same commitment to growth for yourself visibly enough.' },
+    { min:22, name:'Intentional but Narrow', text:'You invest in your people with real energy and show up proactively for development conversations. The place worth examining is how you are defining development. If growth is primarily framed around performance or promotion, you may be leaving the most meaningful parts of development on the table.' },
+    { min:14, name:'Availability-Based Developer', text:'You care about your team\'s growth. But your approach tends to be reactive rather than designed. You make yourself available and support people when they come to you. The risk is that the team members who most need intentional investment are often the least likely to ask for it.' },
+    { min:0,  name:'Meaningful Blind Spot', text:'Development is one of the most direct levers a leader has on retention, engagement, and team performance. A gap here tends to compound over time. Starting with one dedicated development conversation per team member per quarter is a concrete and meaningful first move.' },
+  ],
+};
+
+let currentQ = 0;
+let questionOrder = [];
+let answers = {};
+let userData = {};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.remove('active');
+  void el.offsetWidth;
+  el.classList.add('active');
+  document.getElementById('progressWrap').classList.toggle('visible', id === 'screen-question');
+  window.scrollTo(0, 0);
+}
+
+function startAssessment() {
+  userData = {
+    firstName: document.getElementById('firstName').value.trim() || 'Leader',
+    lastName: document.getElementById('lastName').value.trim(),
+    email: document.getElementById('email').value.trim(),
+  };
+  currentQ = 0;
+  answers = {};
+  questionOrder = shuffle(QUESTIONS_RAW.map((_, i) => i));
+  showScreen('screen-question');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS_RAW[questionOrder[currentQ]];
+  const total = QUESTIONS_RAW.length;
+
+  document.getElementById('qNum').textContent = 'Question ' + (currentQ + 1) + ' of ' + total;
+  document.getElementById('qText').textContent = q.text;
+  document.getElementById('progressFill').style.width = Math.round((currentQ / total) * 100) + '%';
+  document.getElementById('progressLabel').textContent = 'Question ' + (currentQ + 1) + ' of ' + total;
+
+  const wrap = document.getElementById('scaleWrap');
+  wrap.innerHTML = SCALE.map(s => {
+    const sel = answers[q.id] === s.val;
+    return '<button class="scale-option' + (sel ? ' selected' : '') + '" data-id="' + q.id + '" data-val="' + s.val + '">' +
+      '<span class="scale-val">' + s.val + '</span>' +
+      '<span class="scale-txt">' + s.text + '</span>' +
+      '</button>';
+  }).join('');
+
+  wrap.onclick = function(e) {
+    const btn = e.target.closest('[data-id]');
+    if (!btn) return;
+    answers[btn.dataset.id] = parseInt(btn.dataset.val);
+    wrap.querySelectorAll('.scale-option').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('nextBtn').disabled = false;
+  };
+
+  const isLast = currentQ === questionOrder.length - 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = answers[q.id] === undefined;
+  nextBtn.textContent = isLast ? 'See My Results →' : 'Next →';
+  nextBtn.onclick = isLast ? showResults : nextQuestion;
+
+  document.getElementById('prevBtn').style.display = currentQ === 0 ? 'none' : '';
+}
+
+function nextQuestion() {
+  if (answers[QUESTIONS_RAW[questionOrder[currentQ]].id] === undefined) return;
+  currentQ++;
+  if (currentQ >= QUESTIONS_RAW.length) { showResults(); return; }
+  showScreen('screen-question');
+  renderQuestion();
+}
+
+function prevQuestion() {
+  if (currentQ === 0) { showScreen('screen-info'); return; }
+  currentQ--;
+  showScreen('screen-question');
+  renderQuestion();
+}
+
+function computeScores() {
+  const s = { blue: 0, red: 0, yellow: 0, green: 0 };
+  QUESTIONS_RAW.forEach(q => { if (answers[q.id]) s[q.q] += answers[q.id]; });
+  return s;
+}
+
+function getBand(q, score) {
+  return BANDS[q].find(b => score >= b.min) || BANDS[q][BANDS[q].length - 1];
+}
+
+function getNarrative(q, score) {
+  return NARRATIVES[q].find(n => score >= n.min) || NARRATIVES[q][NARRATIVES[q].length - 1];
+}
+
+function showResults() {
+  const scores = computeScores();
+  const total = Object.values(scores).reduce((a, b) => a + b, 0);
+
+  const name = userData.firstName + (userData.lastName ? ' ' + userData.lastName : '');
+  sendResults(scores);
+
+  const quads = ['blue', 'red', 'yellow', 'green'];
+
+  const quadCardsHTML = quads.map(q => {
+    const s = scores[q];
+    const pct = Math.round((s / 35) * 100);
+    const band = getBand(q, s);
+    return '<div class="quad-card ' + q + '">' +
+      '<div class="quad-label">' + QUADRANT_INFO[q].label + '</div>' +
+      '<div style="display:flex;align-items:baseline;gap:6px;">' +
+        '<span class="quad-score ' + q + '">' + s + '</span>' +
+        '<span class="quad-denom">/ 35</span>' +
+      '</div>' +
+      '<div class="quad-bar-track"><div class="quad-bar-fill ' + q + '" style="width:' + pct + '%"></div></div>' +
+      '<div class="quad-band">' + band.label + ': ' + band.desc + '</div>' +
+      '</div>';
+  }).join('');
+
+  const narrativesHTML = quads.map(q => {
+    const n = getNarrative(q, scores[q]);
+    return '<div class="narrative-section">' +
+      '<div class="narrative-label">' + QUADRANT_INFO[q].label + '</div>' +
+      '<div class="narrative-head ' + q + '">' + n.name + '</div>' +
+      '<div class="narrative-text">' + QUADRANT_INFO[q].about + '</div>' +
+      '<div class="narrative-text" style="margin-top:12px;">' + n.text + '</div>' +
+      '</div>';
+  }).join('');
+
+  document.getElementById('screen-results').innerHTML =
+    '<div class="eyebrow">Your Results</div>' +
+    '<div class="results-name">' + name + '</div>' +
+    '<div class="results-sub">Leadership Indicator · Space Creator</div>' +
+
+    '<div class="radar-wrap">' +
+      '<div class="radar-title">Your leadership profile</div>' +
+      '<div class="radar-canvas-wrap"><canvas id="radarChart" width="400" height="400"></canvas></div>' +
+    '</div>' +
+
+    '<div class="quad-grid">' + quadCardsHTML + '</div>' +
+
+    narrativesHTML +
+
+    '<div class="cta-box">' +
+      '<div class="cta-head">Your results are a window into the way your team experiences you as a leader.</div>' +
+      '<div class="cta-body">And an invitation to get curious about what is possible. Bring what you found here into a conversation: with your team, with a trusted colleague, or with us. If any of what you saw today resonated, surprised you, or raised a question worth sitting with, that is exactly where good culture work begins.</div>' +
+      '<a class="cta-link" href="https://spacecreator.com" target="_blank">Schedule a Conversation with Daniel →</a>' +
+    '</div>';
+
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressLabel').textContent = 'Complete';
+  showScreen('screen-results');
+
+  setTimeout(() => { buildRadar(scores); }, 100);
+}
+
+function buildRadar(scores) {
+  const canvas = document.getElementById('radarChart');
+  if (!canvas) return;
+  const isDark = !document.body.classList.contains('light');
+
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const tickColor = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)';
+  const pointColor = isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)';
+
+  new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: ['Safety and Feedback', 'Conflict and Collaboration', 'Vision and Alignment', 'Growth and Development'],
+      datasets: [{
+        data: [scores.blue, scores.red, scores.yellow, scores.green],
+        backgroundColor: 'rgba(74,144,217,0.15)',
+        borderColor: '#4a90d9',
+        borderWidth: 2,
+        pointBackgroundColor: ['#4a90d9', '#d94a4a', '#d9b84a', '#4ab87a'],
+        pointBorderColor: isDark ? '#0f0f0f' : '#f7f5f0',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          min: 0,
+          max: 35,
+          ticks: {
+            stepSize: 7,
+            color: tickColor,
+            backdropColor: 'transparent',
+            font: { size: 10, family: 'DM Sans' },
+          },
+          grid: { color: gridColor },
+          angleLines: { color: gridColor },
+          pointLabels: {
+            color: pointColor,
+            font: { size: 11, family: 'DM Sans' },
+          },
+          startAngle: 225,
+        }
+      },
+      plugins: { legend: { display: false } },
+    }
+  });
+}
+
+
+// ============================================================
+// EMAIL RESULTS
+// ============================================================
+function sendResults(scores) {
+  const total = Object.values(scores).reduce((a,b) => a+b, 0);
+  const params = {
+    first_name: userData.firstName,
+    last_name: userData.lastName || '',
+    email: userData.email || '',
+    score_blue: scores.blue,
+    score_red: scores.red,
+    score_yellow: scores.yellow,
+    score_green: scores.green,
+    score_total: total,
+  };
+  if (userData.email) {
+    emailjs.send('service_aa8o0m7', 'template_smstvle', params)
+      .then(() => console.log('Results email sent'))
+      .catch(err => console.error('Email error:', err));
+  }
+}
+
+function previewResults() {
+  userData = { firstName: 'Alex', lastName: 'Rivera', email: 'alex@example.com' };
+  answers = { B1:5,B2:4,B3:6,B4:3,B5:4, R1:6,R2:5,R3:4,R4:3,R5:5, Y1:4,Y2:3,Y3:5,Y4:4,Y5:4, G1:3,G2:4,G3:2,G4:4,G5:3 };
+  questionOrder = QUESTIONS_RAW.map((_, i) => i);
+  showResults();
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeIcon').textContent = isLight ? '🌙' : '☀️';
+  document.getElementById('themeLabel').textContent = isLight ? 'Go Dark' : 'Go Light';
+  localStorage.setItem('li-theme', isLight ? 'light' : 'dark');
+}
+
+(function() {
+  if (localStorage.getItem('li-theme') === 'light') {
+    document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const i = document.getElementById('themeIcon');
+      const l = document.getElementById('themeLabel');
+      if (i) i.textContent = '🌙';
+      if (l) l.textContent = 'Go Dark';
+    });
+  }
+})();
+</script>
+</body>
+</html>
